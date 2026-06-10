@@ -1,0 +1,49 @@
+name: Build on Windows
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate PowerShell script syntax
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$errors)
+            if ($errors) {
+              $failed = $true
+              Write-Host "::error file=$($_.FullName)::$($errors[0].Message)"
+            } else {
+              Write-Host "OK: $($_.Name)"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Build RescueDrive.exe (Windows-native)
+        shell: pwsh
+        run: ./installer-exe/Build-Exe.ps1
+
+      - name: Smoke-test the exe payload
+        shell: pwsh
+        run: |
+          $exe = 'dist/RescueDrive.exe'
+          if (-not (Test-Path $exe)) { throw 'exe not produced' }
+          $asm = [System.Reflection.Assembly]::LoadFrom((Resolve-Path $exe))
+          if ($asm.GetManifestResourceNames() -notcontains 'RescueDrive.payload.zip') {
+            throw 'payload.zip not embedded'
+          }
+          Write-Host "exe OK: $((Get-Item $exe).Length) bytes, payload embedded."
+
+      - name: Upload Windows-built installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: RescueDrive-installer
+          path: dist/RescueDrive.exe
