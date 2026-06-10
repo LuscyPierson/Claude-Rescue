@@ -134,9 +134,15 @@ function Install-Bootable($disk) {
         'Confirm erase', 'YesNo', 'Warning')
     if ($res -ne 'Yes') { Write-Log 'Cancelled.'; return }
     Write-Log 'Building bootable WinPE rescue drive (10-30 minutes, watch the console window)...'
-    $p = Start-Process powershell -Verb RunAs -Wait -PassThru -ArgumentList @(
+    $buildArgs = @(
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$BuildScript`"",
         '-DiskNumber', $disk.Number, '-ToolkitPath', "`"$ToolkitDir`"")
+    $driversDir = Join-Path $RepoRoot 'Drivers'
+    if (Test-Path $driversDir) {
+        Write-Log "Found Drivers folder — drivers will be injected into the boot image."
+        $buildArgs += @('-DriversPath', "`"$driversDir`"")
+    }
+    $p = Start-Process powershell -Verb RunAs -Wait -PassThru -ArgumentList $buildArgs
     if ($p.ExitCode -eq 0) { Write-Log 'Bootable rescue drive created successfully.' }
     else { Write-Log "Build FAILED (exit code $($p.ExitCode)). See console output." }
 }

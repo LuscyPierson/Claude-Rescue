@@ -7,11 +7,15 @@
     Physical disk number of the target USB drive. THE DRIVE IS ERASED.
 .PARAMETER ToolkitPath
     Path to the Toolkit folder to embed in the image.
+.PARAMETER DriversPath
+    Optional folder of extracted .inf drivers (storage/network for your hardware)
+    to inject into the boot image recursively.
 #>
 #Requires -RunAsAdministrator
 param(
     [Parameter(Mandatory)] [int]    $DiskNumber,
-    [Parameter(Mandatory)] [string] $ToolkitPath
+    [Parameter(Mandatory)] [string] $ToolkitPath,
+    [string] $DriversPath
 )
 $ErrorActionPreference = 'Stop'
 
@@ -42,15 +46,30 @@ dism /Mount-Image /ImageFile:"$wim" /Index:1 /MountDir:"$mount" | Out-Host
 try {
     Write-Host '== Adding PowerShell + WMI + storage support packages'
     # Order matters: each language-neutral package, then its en-us language pack.
-    $packages = @('WinPE-WMI', 'WinPE-NetFx', 'WinPE-Scripting', 'WinPE-PowerShell',
-                  'WinPE-StorageWMI', 'WinPE-DismCmdlets', 'WinPE-SecureStartup')
+    $packages = @(
+        'WinPE-WMI', 'WinPE-NetFx', 'WinPE-Scripting', 'WinPE-PowerShell',
+        'WinPE-StorageWMI', 'WinPE-DismCmdlets',
+        'WinPE-SecureStartup',     # BitLocker (manage-bde) support
+        'WinPE-Dot3Svc',           # wired 802.1x network authentication
+        'WinPE-FMAPI',             # deleted-file recovery API
+        'WinPE-EnhancedStorage',   # eDrive/encrypted-drive hardware support
+        'WinPE-WinReCfg'           # Windows RE configuration tooling
+    )
     foreach ($p in $packages) {
         dism /Image:"$mount" /Add-Package /PackagePath:"$ocsPath\$p.cab" | Out-Host
         $lang = "$ocsPath\en-us\$p`_en-us.cab"
         if (Test-Path $lang) { dism /Image:"$mount" /Add-Package /PackagePath:"$lang" | Out-Host }
     }
 
-    Write-Host '== Embedding rescue toolkit'
+    # More RAM-backed scratch space so scans and tools have room to work.
+    dism /Image:"$mount" /Set-ScratchSpace:512 | Out-Host
+
+    if ($DriversPath -and (Test-Path $DriversPath)) {
+        Write-Host "== Injecting drivers from $DriversPath"
+        dism /Image:"$mount" /Add-Driver /Driver:"$DriversPath" /Recurse | Out-Host
+    }
+
+    Write-Host '== Embedding rescue toolkit (including Toolkit\Extras third-party tools)'
     Copy-Item $ToolkitPath "$mount\RescueToolkit" -Recurse -Force
 
     # Auto-launch the toolkit at boot, with a console left open behind it.

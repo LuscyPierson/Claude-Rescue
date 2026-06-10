@@ -20,11 +20,9 @@ a drive that works two ways:
 
 ## Quick start
 
-On a Windows 10/11 machine (as Administrator):
-
-```
-Install-RescueDrive.bat
-```
+On a Windows 10/11 machine, double-click **`dist\RescueDrive.exe`** — that's it.
+One UAC prompt, then the installer GUI opens. (Alternative without the exe:
+run `Install-RescueDrive.bat` from a checkout of this repo.)
 
 1. Pick your USB drive from the list.
 2. Choose **Toolkit only** (no formatting, just copies files) or **Full bootable drive**
@@ -45,11 +43,13 @@ The installer GUI detects whether they're present and tells you if not.
 ## Repo layout
 
 ```
-Install-RescueDrive.bat        Elevating launcher for the installer GUI
+dist/RescueDrive.exe           ONE-CLICK INSTALLER — start here
+Install-RescueDrive.bat        Elevating launcher for the installer GUI (repo checkout)
 RescueDrive-Installer.ps1      GUI: pick a drive, install/build
 Toolkit/
   RescueToolkit.bat            Elevating launcher for the toolkit GUI
   RescueToolkit.ps1            Toolkit GUI (works in Windows and WinPE)
+  Extras/                      Drop portable 3rd-party tools here — baked into the boot image
   Modules/
     MalwareScan.ps1
     RegistryCheck.ps1
@@ -57,7 +57,16 @@ Toolkit/
     TempCleanup.ps1
 WinPE/
   Build-BootableImage.ps1      Builds WinPE with the toolkit baked in, writes it to USB
+Drivers/                       (optional) .inf drivers to inject into the boot image
+installer-exe/                 Source + Build-Exe.ps1 for dist/RescueDrive.exe
 ```
+
+## What's baked into the WinPE boot image
+
+PowerShell, WMI, .NET, storage cmdlets, DISM cmdlets, BitLocker tooling
+(`manage-bde`), wired-network 802.1x support, the deleted-file recovery API
+(FMAPI), encrypted-drive hardware support, 512 MB scratch space, everything in
+`Toolkit/Extras`, and any `.inf` drivers you place in a `Drivers/` folder.
 
 ## Notes & limitations
 
