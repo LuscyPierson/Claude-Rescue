@@ -6,6 +6,7 @@
     <AssemblyName>RescueDrive</AssemblyName>
     <RootNamespace>RescueDrive</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
     <LangVersion>7.3</LangVersion>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
