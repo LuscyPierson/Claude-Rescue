@@ -20,9 +20,17 @@ a drive that works two ways:
 
 ## Quick start
 
-On a Windows 10/11 machine, double-click **`dist\RescueDrive.exe`** — that's it.
-One UAC prompt, then the installer GUI opens. (Alternative without the exe:
-run `Install-RescueDrive.bat` from a checkout of this repo.)
+On a Windows 10/11 machine you have two ways to open the installer GUI:
+
+- **`Install-RescueDrive.bat`** (recommended) — double-click it. One UAC prompt,
+  then the installer opens. This runs straight from the scripts, so SmartScreen
+  and antivirus don't get in the way.
+- **`dist\RescueDrive.exe`** — a single-file version of the same installer. It
+  works too, but because it's an unsigned executable that unpacks files and
+  launches PowerShell, Windows SmartScreen or Defender may block it the first
+  time (see [Troubleshooting](#troubleshooting-the-installer-wont-run) below).
+
+Then, in either case:
 
 1. Pick your USB drive from the list.
 2. Choose **Toolkit only** (no formatting, just copies files) or **Full bootable drive**
@@ -67,6 +75,30 @@ PowerShell, WMI, .NET, storage cmdlets, DISM cmdlets, BitLocker tooling
 (`manage-bde`), wired-network 802.1x support, the deleted-file recovery API
 (FMAPI), encrypted-drive hardware support, 512 MB scratch space, everything in
 `Toolkit/Extras`, and any `.inf` drivers you place in a `Drivers/` folder.
+
+## Troubleshooting: the installer won't run
+
+If **`dist\RescueDrive.exe`** does nothing, flashes and closes, or shows a blue
+"Windows protected your PC" box, it's being blocked — not broken. The exe is
+unsigned and it unpacks files and starts PowerShell, which is exactly the
+pattern SmartScreen and antivirus treat with suspicion. Pick whichever fix is
+easiest:
+
+1. **Use the script launcher instead (simplest).** Double-click
+   **`Install-RescueDrive.bat`**. It opens the identical installer without
+   tripping SmartScreen.
+2. **Unblock the exe.** Right-click `dist\RescueDrive.exe` → **Properties** →
+   tick **Unblock** at the bottom → **OK**. Or in PowerShell:
+   `Unblock-File .\dist\RescueDrive.exe`. This removes the "downloaded from the
+   internet" mark that triggers SmartScreen.
+3. **Run it past SmartScreen.** If you still get "Windows protected your PC",
+   click **More info → Run anyway**.
+4. **Antivirus quarantined it.** If the file vanishes after download, your AV
+   removed it as a false positive. Restore it from quarantine and add an
+   exclusion, or just use `Install-RescueDrive.bat` (option 1).
+
+All four open the same installer GUI — there's no functional difference, only
+how Windows treats the file.
 
 ## Notes & limitations
 

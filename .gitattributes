@@ -1,0 +1,13 @@
+# Keep binaries byte-exact — never apply line-ending normalization to them,
+# which would corrupt the committed installer and make it "not a valid
+# Win32 application" when checked out on Windows.
+*.exe   binary
+*.ico   binary
+*.zip   binary
+*.wim   binary
+
+# Scripts: stable line endings so they behave the same everywhere.
+*.ps1   text eol=crlf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.md    text eol=lf
