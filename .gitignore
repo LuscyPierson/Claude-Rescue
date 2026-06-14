@@ -2,3 +2,9 @@ dist/RescueDrive.pdb
 installer-exe/payload.zip
 installer-exe/bin/
 installer-exe/obj/
+
+# Never commit signing material.
+*.pfx
+*.p12
+*.snk
+cert.txt

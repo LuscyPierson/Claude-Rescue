@@ -32,6 +32,12 @@ jobs:
 
       - name: Build RescueDrive.exe (Windows-native)
         shell: pwsh
+        env:
+          # Optional code signing. Add these as repository secrets to get a
+          # signed exe that SmartScreen/AV won't block. If unset, the build
+          # produces a working unsigned exe (see installer-exe/Sign-Exe.ps1).
+          RESCUE_SIGN_PFX_BASE64: ${{ secrets.RESCUE_SIGN_PFX_BASE64 }}
+          RESCUE_SIGN_PFX_PASSWORD: ${{ secrets.RESCUE_SIGN_PFX_PASSWORD }}
         run: ./installer-exe/Build-Exe.ps1
 
       - name: Smoke-test the exe payload

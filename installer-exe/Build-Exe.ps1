@@ -16,3 +16,7 @@ Compress-Archive "$staging\*" $payload
 dotnet publish $PSScriptRoot -c Release -o "$root\dist"
 Get-ChildItem "$root\dist" -Exclude RescueDrive.exe | Remove-Item -Recurse -Force
 Write-Host "Built $root\dist\RescueDrive.exe"
+
+# Authenticode-sign when a certificate is configured (see Sign-Exe.ps1).
+# No-op (and non-fatal) when none is present, so unsigned builds still work.
+& (Join-Path $PSScriptRoot 'Sign-Exe.ps1') -ExePath "$root\dist\RescueDrive.exe"

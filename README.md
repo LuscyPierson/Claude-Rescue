@@ -100,6 +100,34 @@ easiest:
 All four open the same installer GUI — there's no functional difference, only
 how Windows treats the file.
 
+## Permanently fixing the warning: sign the exe
+
+The blocks above happen because `RescueDrive.exe` is unsigned. A code signature
+removes them for everyone, not just on your own PC. The build is already wired
+for it — you only need to supply a certificate:
+
+1. Get an **Authenticode code-signing certificate** as a `.pfx` file. Options:
+   buy one from a CA (DigiCert, Sectigo, SSL.com, etc.; OV is cheapest, EV gives
+   instant SmartScreen reputation), or, for your own machines only, create a
+   self-signed one and trust it locally.
+2. **For CI builds (recommended):** base64-encode the pfx and add two GitHub
+   repository secrets — `RESCUE_SIGN_PFX_BASE64` and `RESCUE_SIGN_PFX_PASSWORD`.
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes('mycert.pfx')) | Set-Content cert.txt
+   ```
+   Paste the contents of `cert.txt` into the `RESCUE_SIGN_PFX_BASE64` secret. The
+   next push signs `dist\RescueDrive.exe` automatically.
+3. **For a local build:** set env vars and run the build:
+   ```powershell
+   $env:RESCUE_SIGN_PFX_PATH = 'C:\path\to\mycert.pfx'
+   $env:RESCUE_SIGN_PFX_PASSWORD = '<password>'
+   .\installer-exe\Build-Exe.ps1
+   ```
+
+Without a certificate the build still succeeds and produces a working unsigned
+exe — signing is skipped, not required. Certificate files are git-ignored so
+they can't be committed by accident. Details in `installer-exe\Sign-Exe.ps1`.
+
 ## Notes & limitations
 
 - Booting from USB requires enabling it in the PC's firmware (BIOS/UEFI) boot menu,
