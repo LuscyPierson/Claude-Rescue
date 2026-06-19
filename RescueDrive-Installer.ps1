@@ -8,22 +8,36 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# Any unhandled startup error becomes a visible dialog instead of a silent
+# close, so "nothing opened" is never a mystery.
+trap {
+    [System.Windows.Forms.MessageBox]::Show(
+        "The Rescue Drive installer could not start:`n`n$($_.Exception.Message)",
+        'Claude Rescue Drive', 'OK', 'Error') | Out-Null
+    exit 1
+}
+
 $ErrorActionPreference = 'Stop'
 $RepoRoot = $PSScriptRoot
 $ToolkitDir = Join-Path $RepoRoot 'Toolkit'
 $BuildScript = Join-Path $RepoRoot 'WinPE\Build-BootableImage.ps1'
 
 function Get-UsbDisks {
-    Get-Disk | Where-Object { $_.BusType -eq 'USB' } | ForEach-Object {
-        $disk = $_
-        $letters = (Get-Partition -DiskNumber $disk.Number -ErrorAction SilentlyContinue |
-            Where-Object DriveLetter | ForEach-Object { "$($_.DriveLetter):" }) -join ' '
-        [pscustomobject]@{
-            Number  = $disk.Number
-            Label   = '{0} — {1} ({2:N1} GB) {3}' -f $disk.Number, $disk.FriendlyName,
-                       ($disk.Size / 1GB), $(if ($letters) { "[$letters]" } else { '[no letter]' })
-            Letters = $letters
+    try {
+        Get-Disk -ErrorAction Stop | Where-Object { $_.BusType -eq 'USB' } | ForEach-Object {
+            $disk = $_
+            $letters = (Get-Partition -DiskNumber $disk.Number -ErrorAction SilentlyContinue |
+                Where-Object DriveLetter | ForEach-Object { "$($_.DriveLetter):" }) -join ' '
+            [pscustomobject]@{
+                Number  = $disk.Number
+                Label   = '{0} — {1} ({2:N1} GB) {3}' -f $disk.Number, $disk.FriendlyName,
+                           ($disk.Size / 1GB), $(if ($letters) { "[$letters]" } else { '[no letter]' })
+                Letters = $letters
+            }
         }
+    } catch {
+        # Drive enumeration must never prevent the window from opening.
+        Write-Log "Could not list drives: $($_.Exception.Message)"
     }
 }
 
