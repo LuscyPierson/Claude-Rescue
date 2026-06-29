@@ -11,8 +11,12 @@ and cleanup — from one place. The drive works two ways:
 
 ## What it looks like
 
-One window, a sidebar to switch between creating the drive and each repair tool, and a
-shared activity log along the bottom.
+One window, a sidebar (with icons) to switch between creating the drive and each repair
+tool, and a shared activity log along the bottom.
+
+**Home** — quick-start cards and the live activity log:
+
+![Home screen](docs/gui-home.png)
 
 **Create Rescue Drive** — pick a USB, choose toolkit-only or full bootable, click Install:
 

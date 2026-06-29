@@ -79,10 +79,28 @@ $sidebar = New-Object System.Windows.Forms.Panel
 $sidebar.Dock = 'Left'; $sidebar.Width = 224; $sidebar.BackColor = $cSide
 $form.Controls.Add($sidebar)
 
+# Drawn app logo: a blue disc with a white rescue cross (GDI+, no image file).
+$logoPanel = New-Object System.Windows.Forms.Panel
+$logoPanel.Location = '20,20'; $logoPanel.Size = '48,48'; $logoPanel.BackColor = $cSide
+$logoPanel.Add_Paint({
+    param($s, $e)
+    $g = $e.Graphics; $g.SmoothingMode = 'AntiAlias'
+    $disc = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.Rectangle(0, 0, 46, 46)),
+        [System.Drawing.Color]::FromArgb(0, 153, 255),
+        [System.Drawing.Color]::FromArgb(0, 90, 180), 90.0)
+    $g.FillEllipse($disc, 1, 1, 44, 44)
+    $white = New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::White)
+    $g.FillRectangle($white, 20, 11, 6, 24)   # vertical bar of the cross
+    $g.FillRectangle($white, 11, 20, 24, 6)   # horizontal bar of the cross
+    $disc.Dispose(); $white.Dispose()
+})
+$sidebar.Controls.Add($logoPanel)
+
 $logo = New-Object System.Windows.Forms.Label
-$logo.Text = 'Claude Rescue Drive'; $logo.ForeColor = [System.Drawing.Color]::White
-$logo.Font = New-Object System.Drawing.Font('Segoe UI', 12, [System.Drawing.FontStyle]::Bold)
-$logo.Location = '20,24'; $logo.Size = '190,46'
+$logo.Text = "Claude`r`nRescue Drive"; $logo.ForeColor = [System.Drawing.Color]::White
+$logo.Font = New-Object System.Drawing.Font('Segoe UI', 11, [System.Drawing.FontStyle]::Bold)
+$logo.Location = '76,18'; $logo.Size = '140,44'
 $sidebar.Controls.Add($logo)
 
 $lblMode = New-Object System.Windows.Forms.Label
@@ -121,13 +139,20 @@ function Write-RLog([string]$msg) {
 
 # ------------------------------------------------------- panel construction --
 $script:panels = @{}
-function New-Panel([string]$key, [string]$title, [string]$sub) {
+function New-Panel([string]$key, [string]$title, [string]$sub, [int]$glyph = 0) {
     $p = New-Object System.Windows.Forms.Panel
     $p.Dock = 'Fill'; $p.BackColor = $cBg; $p.Visible = $false
+    $off = 0
+    if ($glyph) {
+        $gi = New-Object System.Windows.Forms.Label
+        $gi.Text = [char]$glyph; $gi.Font = New-Object System.Drawing.Font('Segoe MDL2 Assets', 22)
+        $gi.ForeColor = $cAccent; $gi.Location = '0,4'; $gi.Size = '40,40'; $gi.TextAlign = 'MiddleCenter'
+        $p.Controls.Add($gi); $off = 48
+    }
     $h = New-Object System.Windows.Forms.Label
-    $h.Text = $title; $h.Font = $fHead; $h.ForeColor = $cText; $h.Location = '0,8'; $h.AutoSize = $true
+    $h.Text = $title; $h.Font = $fHead; $h.ForeColor = $cText; $h.Location = "$off,8"; $h.AutoSize = $true
     $s = New-Object System.Windows.Forms.Label
-    $s.Text = $sub; $s.Font = $fSub; $s.ForeColor = [System.Drawing.Color]::Gray; $s.Location = '2,42'; $s.AutoSize = $true
+    $s.Text = $sub; $s.Font = $fSub; $s.ForeColor = [System.Drawing.Color]::Gray; $s.Location = "$([int]($off + 2)),42"; $s.AutoSize = $true
     $p.Controls.AddRange(@($h, $s))
     $host_.Controls.Add($p)
     $script:panels[$key] = $p
@@ -145,35 +170,46 @@ function New-Btn($parent, [string]$text, [int]$x, [int]$y, [int]$w, [scriptblock
 }
 function Show-Panel([string]$key) {
     foreach ($k in $script:panels.Keys) { $script:panels[$k].Visible = ($k -eq $key) }
-    foreach ($n in $script:nav) { $n.BackColor = $(if ($n.Tag -eq $key) { $cSideSel } else { $cSide }) }
+    foreach ($n in $script:nav) {
+        $sel = ($n.Tag -eq $key)
+        $n.BackColor = $(if ($sel) { $cSideSel } else { $cSide })
+        foreach ($c in $n.Controls) { $c.ForeColor = $(if ($sel) { [System.Drawing.Color]::White } else { $cSideTxt }) }
+    }
 }
 
-# ------------------------------------------------------------- nav buttons ---
+# ------------------------------------------------------------- nav rows ------
+# Each row is an icon (Segoe MDL2 Assets glyph) + label, the whole row clickable.
 $script:nav = @()
+$fIcon = New-Object System.Drawing.Font('Segoe MDL2 Assets', 12)
 $navItems = @(
-    @('home',    'Home'),
-    @('create',  'Create Rescue Drive'),
-    @('malware', 'Malware Scan'),
-    @('registry','Registry Check'),
-    @('diag',    'Diagnostics'),
-    @('cleanup', 'Temp Cleanup'),
-    @('console', 'Open Console'),
-    @('report',  'Save Report')
+    @('home',     'Home',                0xE80F),   # Home
+    @('create',   'Create Rescue Drive', 0xE88E),   # Save (write to drive)
+    @('malware',  'Malware Scan',        0xEA18),   # Shield
+    @('registry', 'Registry Check',      0xE721),   # Search
+    @('diag',     'Diagnostics',         0xE713),   # Settings (gear)
+    @('cleanup',  'Temp Cleanup',        0xE74D),   # Delete
+    @('console',  'Open Console',        0xE756),   # CommandPrompt
+    @('report',   'Save Report',         0xE896)    # Download
 )
-$ny = 92
+$ny = 96
 foreach ($it in $navItems) {
-    $nb = New-Object System.Windows.Forms.Button
-    $nb.Text = "   $($it[1])"; $nb.Tag = $it[0]; $nb.TextAlign = 'MiddleLeft'
-    $nb.Location = "10,$ny"; $nb.Size = '204,34'; $nb.FlatStyle = 'Flat'
-    $nb.FlatAppearance.BorderSize = 0; $nb.BackColor = $cSide; $nb.ForeColor = $cSideTxt; $nb.Font = $fNav
-    $key = $it[0]
-    $nb.Add_Click({ Show-Panel $this.Tag }.GetNewClosure())
-    $sidebar.Controls.Add($nb); $script:nav += $nb
-    $ny += 40
+    $row = New-Object System.Windows.Forms.Panel
+    $row.Location = "10,$ny"; $row.Size = '204,36'; $row.BackColor = $cSide; $row.Tag = $it[0]; $row.Cursor = 'Hand'
+    $ic = New-Object System.Windows.Forms.Label
+    $ic.Text = [char]$it[2]; $ic.Font = $fIcon; $ic.ForeColor = $cSideTxt; $ic.BackColor = 'Transparent'
+    $ic.Location = '12,7'; $ic.Size = '24,22'; $ic.TextAlign = 'MiddleCenter'
+    $tx = New-Object System.Windows.Forms.Label
+    $tx.Text = $it[1]; $tx.Font = $fNav; $tx.ForeColor = $cSideTxt; $tx.BackColor = 'Transparent'
+    $tx.Location = '44,9'; $tx.Size = '150,20'
+    $row.Controls.AddRange(@($ic, $tx))
+    $click = { Show-Panel $row.Tag }.GetNewClosure()
+    $row.Add_Click($click); $ic.Add_Click($click); $tx.Add_Click($click)
+    $sidebar.Controls.Add($row); $script:nav += $row
+    $ny += 42
 }
 
 # ===================================================== PANEL: Home ============
-$pHome = New-Panel 'home' 'Welcome' 'Pick a task on the left, or start with one of these.'
+$pHome = New-Panel 'home' 'Welcome' 'Pick a task on the left, or start with one of these.' 0xE80F
 New-Btn $pHome 'Create a rescue USB drive' 0 90 260 { Show-Panel 'create' } $true | Out-Null
 New-Btn $pHome 'Scan this PC for malware'  0 134 260 { Show-Panel 'malware' } $false | Out-Null
 New-Btn $pHome 'Run full diagnostics'      0 178 260 { Show-Panel 'diag' } $false | Out-Null
@@ -183,7 +219,7 @@ $hi.Text = "This drive works two ways:`r`n`r`n• Inside Windows — run tools o
 $pHome.Controls.Add($hi)
 
 # ============================================== PANEL: Create Rescue Drive ====
-$pCreate = New-Panel 'create' 'Create Rescue Drive' 'Turn a USB stick into a bootable Windows rescue & repair drive.'
+$pCreate = New-Panel 'create' 'Create Rescue Drive' 'Turn a USB stick into a bootable Windows rescue & repair drive.' 0xE88E
 $lblPick = New-Object System.Windows.Forms.Label
 $lblPick.Text = '1.  Select USB drive'; $lblPick.Location = '0,84'; $lblPick.AutoSize = $true
 $lblPick.Font = New-Object System.Drawing.Font('Segoe UI', 10, [System.Drawing.FontStyle]::Bold)
@@ -270,39 +306,39 @@ function Add-ToolButtons($panel, $buttons) {
 }
 
 # ===================================================== PANEL: Malware =========
-$pMal = New-Panel 'malware' 'Malware Scan' 'Scan with Windows Defender. In boot mode this scans the offline Windows.'
+$pMal = New-Panel 'malware' 'Malware Scan' 'Scan with Windows Defender. In boot mode this scans the offline Windows.' 0xEA18
 Add-ToolButtons $pMal @(
     @{ Text='Quick scan';  Width=150; Primary=$true;  Action={ $script:scanType=1; Invoke-MalwareScan -Target $script:TargetDrive -IsWinPE $script:IsWinPE } },
     @{ Text='Full scan';   Width=150; Primary=$false; Action={ $script:scanType=2; Invoke-MalwareScan -Target $script:TargetDrive -IsWinPE $script:IsWinPE } }
 )
 
 # ===================================================== PANEL: Registry ========
-$pReg = New-Panel 'registry' 'Registry Check' 'Audit autoruns, logon hijacks, IFEO debuggers, and suspicious services.'
+$pReg = New-Panel 'registry' 'Registry Check' 'Audit autoruns, logon hijacks, IFEO debuggers, and suspicious services.' 0xE721
 Add-ToolButtons $pReg @(
     @{ Text='Run registry audit'; Width=190; Primary=$true; Action={ Invoke-RegistryCheck -Target $script:TargetDrive -IsWinPE $script:IsWinPE } }
 )
 
 # ===================================================== PANEL: Diagnostics =====
-$pDiag = New-Panel 'diag' 'Diagnostics' 'Disk health, system file integrity, and recent critical errors.'
+$pDiag = New-Panel 'diag' 'Diagnostics' 'Disk health, system file integrity, and recent critical errors.' 0xE713
 Add-ToolButtons $pDiag @(
     @{ Text='Run full diagnostics'; Width=190; Primary=$true; Action={ Invoke-Diagnostics -Target $script:TargetDrive -IsWinPE $script:IsWinPE } }
 )
 
 # ===================================================== PANEL: Cleanup =========
-$pClean = New-Panel 'cleanup' 'Temp Cleanup' 'Clear temp folders, Windows Update cache, and the recycle bin.'
+$pClean = New-Panel 'cleanup' 'Temp Cleanup' 'Clear temp folders, Windows Update cache, and the recycle bin.' 0xE74D
 Add-ToolButtons $pClean @(
     @{ Text='Clean temporary files'; Width=200; Primary=$true; Action={ Invoke-TempCleanup -Target $script:TargetDrive -IsWinPE $script:IsWinPE } }
 )
 
 # ===================================================== PANEL: Console =========
-$pCon = New-Panel 'console' 'Open Console' 'Open an elevated console for manual work.'
+$pCon = New-Panel 'console' 'Open Console' 'Open an elevated console for manual work.' 0xE756
 Add-ToolButtons $pCon @(
     @{ Text='Open PowerShell'; Width=160; Primary=$true;  Action={ Start-Process powershell -ArgumentList '-NoExit'; Write-RLog 'Opened PowerShell.' } },
     @{ Text='Open CMD';        Width=160; Primary=$false; Action={ Start-Process cmd; Write-RLog 'Opened CMD.' } }
 )
 
 # ===================================================== PANEL: Report ==========
-$pRep = New-Panel 'report' 'Save Report' 'Save everything in the activity log to a text file.'
+$pRep = New-Panel 'report' 'Save Report' 'Save everything in the activity log to a text file.' 0xE896
 Add-ToolButtons $pRep @(
     @{ Text='Save report'; Width=160; Primary=$true; Action={
         $path = if ($script:IsWinPE) { 'X:\RescueReport.txt' }
