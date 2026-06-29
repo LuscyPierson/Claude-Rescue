@@ -7,6 +7,7 @@ Remove-Item $payload -ErrorAction SilentlyContinue
 $staging = Join-Path $env:TEMP 'rescue_payload'
 Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $staging | Out-Null
+Copy-Item "$root\RescueDrive.ps1" $staging
 Copy-Item "$root\RescueDrive-Installer.ps1" $staging
 Copy-Item "$root\Toolkit" "$staging\Toolkit" -Recurse
 Copy-Item "$root\WinPE" "$staging\WinPE" -Recurse

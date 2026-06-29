@@ -1,12 +1,26 @@
 # Claude Rescue Drive
 
-A one-click Windows rescue drive builder. Pick a USB drive, click **Install**, and you get
-a drive that works two ways:
+A one-click Windows rescue drive builder with a single-window app that both **builds the
+rescue USB** and **runs the repair toolkit** — malware scan, registry audit, diagnostics,
+and cleanup — from one place. The drive works two ways:
 
-1. **Inside Windows** — plug it in and run `RescueToolkit.bat` from the drive.
+1. **Inside Windows** — plug it in and run the app (or `RescueToolkit.bat`) from the drive.
 2. **Outside Windows (bootable)** — boot the PC from the drive into a WinPE recovery
-   environment where the same toolkit launches automatically. Useful when the installed
+   environment where the same app launches automatically. Useful when the installed
    OS won't start or is too infected to trust.
+
+## What it looks like
+
+One window, a sidebar to switch between creating the drive and each repair tool, and a
+shared activity log along the bottom.
+
+**Create Rescue Drive** — pick a USB, choose toolkit-only or full bootable, click Install:
+
+![Create Rescue Drive screen](docs/gui-create.png)
+
+**Diagnostics** (one of the toolkit tools) — status tiles plus live results in the log:
+
+![Diagnostics screen](docs/gui-diagnostics.png)
 
 ## What the toolkit does
 
@@ -20,12 +34,13 @@ a drive that works two ways:
 
 ## Quick start
 
-On a Windows 10/11 machine you have two ways to open the installer GUI:
+On a Windows 10/11 machine you have two ways to open the app:
 
-- **`Install-RescueDrive.bat`** (recommended) — double-click it. One UAC prompt,
-  then the installer opens. This runs straight from the scripts, so SmartScreen
-  and antivirus don't get in the way.
-- **`dist\RescueDrive.exe`** — a single-file version of the same installer. It
+- **`Start-RescueDrive.bat`** (recommended) — double-click it. One UAC prompt,
+  then the unified window opens. This runs straight from the scripts, so
+  SmartScreen and antivirus don't get in the way. (`Install-RescueDrive.bat`
+  still works too and opens just the drive-builder.)
+- **`dist\RescueDrive.exe`** — a single-file version of the same app. It
   works too, but because it's an unsigned executable that unpacks files and
   launches PowerShell, Windows SmartScreen or Defender may block it the first
   time (see [Troubleshooting](#troubleshooting-the-installer-wont-run) below).

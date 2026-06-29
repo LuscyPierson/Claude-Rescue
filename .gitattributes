@@ -3,6 +3,7 @@
 # Win32 application" when checked out on Windows.
 *.exe   binary
 *.ico   binary
+*.png   binary
 *.zip   binary
 *.wim   binary
 

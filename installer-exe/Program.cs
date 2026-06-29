@@ -90,9 +90,13 @@ namespace RescueDrive
                 }
             }
 
-            string installer = Path.Combine(dest, "RescueDrive-Installer.ps1");
+            // Prefer the unified one-window app; fall back to the standalone
+            // installer GUI if an older payload doesn't carry it.
+            string installer = Path.Combine(dest, "RescueDrive.ps1");
             if (!File.Exists(installer))
-                throw new FileNotFoundException("RescueDrive-Installer.ps1 missing from payload.", installer);
+                installer = Path.Combine(dest, "RescueDrive-Installer.ps1");
+            if (!File.Exists(installer))
+                throw new FileNotFoundException("RescueDrive.ps1 missing from payload.", installer);
 
             var psi = new ProcessStartInfo
             {
