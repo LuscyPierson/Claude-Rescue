@@ -7,5 +7,5 @@ if %errorlevel%==0 (
   powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RescueToolkit.ps1"
 ) else (
   powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','\"%~dp0RescueToolkit.ps1\"'"
+    "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"%~dp0RescueToolkit.ps1\"' } catch { Write-Host $_.Exception.Message; pause }"
 )

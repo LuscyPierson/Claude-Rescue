@@ -19,7 +19,7 @@ if not exist "%~dp0RescueDrive-Installer.ps1" (
 
 echo Launching the Rescue Drive installer (you'll get one Administrator prompt)...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','\"%~dp0RescueDrive-Installer.ps1\"' } catch { Write-Host $_.Exception.Message; exit 1 }"
+  "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"%~dp0RescueDrive-Installer.ps1\"' } catch { Write-Host $_.Exception.Message; exit 1 }"
 
 if errorlevel 1 (
   echo.

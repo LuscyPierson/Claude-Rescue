@@ -18,6 +18,6 @@ if %errorlevel%==0 (
   powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RescueDrive.ps1"
 ) else (
   powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','\"%~dp0RescueDrive.ps1\"' } catch { Write-Host $_.Exception.Message; pause }"
+    "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"%~dp0RescueDrive.ps1\"' } catch { Write-Host $_.Exception.Message; pause }"
 )
 endlocal
