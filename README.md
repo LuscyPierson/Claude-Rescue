@@ -26,6 +26,15 @@ tool, and a shared activity log along the bottom.
 
 ![Diagnostics screen](docs/gui-diagnostics.png)
 
+**Malware Scan**, **Registry Check**, **Temp Cleanup**, **Open Console**, and **Save
+Report** follow the same layout — one or two action buttons up top, results in the log:
+
+![Malware Scan screen](docs/gui-malware.png)
+![Registry Check screen](docs/gui-registry.png)
+![Temp Cleanup screen](docs/gui-cleanup.png)
+![Open Console screen](docs/gui-console.png)
+![Save Report screen](docs/gui-report.png)
+
 ## What the toolkit does
 
 | Button | What it does |
