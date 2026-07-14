@@ -24,6 +24,9 @@ if (-not $isAdmin) {
     }
 }
 
+# Record everything this (elevated) instance does, for diagnosing failures.
+try { Start-Transcript -Path (Join-Path $env:TEMP 'RescueDrive-transcript.log') -Append | Out-Null } catch {}
+
 # Any unhandled startup error becomes a visible dialog instead of a silent
 # close, so "nothing opened" is never a mystery.
 trap {

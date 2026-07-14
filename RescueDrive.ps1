@@ -28,6 +28,9 @@ if (-not $isAdmin) {
     }
 }
 
+# Record everything this (elevated) instance does, for diagnosing failures.
+try { Start-Transcript -Path (Join-Path $env:TEMP 'RescueDrive-transcript.log') -Append | Out-Null } catch {}
+
 trap {
     $log = Join-Path $env:TEMP 'RescueDrive-error.log'
     "[$(Get-Date)] $($_ | Out-String)" | Add-Content $log -ErrorAction SilentlyContinue
