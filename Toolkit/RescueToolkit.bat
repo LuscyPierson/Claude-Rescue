@@ -1,11 +1,6 @@
 @echo off
-:: Launches the rescue toolkit GUI. Elevates when running inside full Windows;
-:: WinPE is always SYSTEM so it just runs directly there.
+:: Launches the rescue toolkit GUI. The .ps1 self-elevates inside full
+:: Windows (one UAC prompt) and runs directly in WinPE, so this launcher
+:: is a single simple command immune to path-quoting problems.
 cd /d "%~dp0"
-reg query "HKLM\SYSTEM\CurrentControlSet\Control\MiniNT" >nul 2>&1
-if %errorlevel%==0 (
-  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RescueToolkit.ps1"
-) else (
-  powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"%~dp0RescueToolkit.ps1\"' } catch { Write-Host $_.Exception.Message; pause }"
-)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RescueToolkit.ps1"

@@ -12,6 +12,26 @@ $ErrorActionPreference = 'Continue'
 
 $script:IsWinPE = Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\MiniNT'
 
+# Self-elevate when inside full Windows (WinPE already runs as SYSTEM).
+# Elevating here in PowerShell avoids the fragile .bat quoting chain that
+# breaks on paths containing spaces.
+if (-not $script:IsWinPE) {
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+               ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        try {
+            Start-Process powershell -Verb RunAs -ArgumentList @(
+                '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"")
+            exit 0
+        } catch {
+            [System.Windows.Forms.MessageBox]::Show(
+                "The Rescue Toolkit needs administrator rights.`nPlease accept the elevation prompt.",
+                'Claude Rescue Toolkit', 'OK', 'Warning') | Out-Null
+            exit 1
+        }
+    }
+}
+
 function Find-OfflineWindows {
     # Locate the offline Windows installation when running from WinPE.
     foreach ($d in [System.IO.DriveInfo]::GetDrives()) {

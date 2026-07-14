@@ -11,9 +11,28 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+# Self-elevate. Doing this in PowerShell (not the .bat) sidesteps the fragile
+# cmd->powershell->powershell quoting chain that breaks on paths with spaces.
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+           ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    try {
+        Start-Process powershell -Verb RunAs -ArgumentList @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"")
+        exit 0
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Claude Rescue Drive needs administrator rights.`nPlease accept the elevation prompt, or right-click Start-RescueDrive.bat and choose 'Run as administrator'.",
+            'Claude Rescue Drive', 'OK', 'Warning') | Out-Null
+        exit 1
+    }
+}
+
 trap {
+    $log = Join-Path $env:TEMP 'RescueDrive-error.log'
+    "[$(Get-Date)] $($_ | Out-String)" | Add-Content $log -ErrorAction SilentlyContinue
     [System.Windows.Forms.MessageBox]::Show(
-        "Claude Rescue Drive could not start:`n`n$($_.Exception.Message)",
+        "Claude Rescue Drive could not start:`n`n$($_.Exception.Message)`n`nDetails saved to:`n$log",
         'Claude Rescue Drive', 'OK', 'Error') | Out-Null
     exit 1
 }

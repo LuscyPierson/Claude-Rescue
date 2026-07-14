@@ -1,8 +1,9 @@
 @echo off
 :: ===================================================================
 ::  Claude Rescue Drive — one-window app (installer + toolkit).
-::  Opens the unified GUI with administrator rights. WinPE runs as
-::  SYSTEM already, so it launches directly there.
+::  The .ps1 self-elevates (one UAC prompt), so this launcher is a
+::  single simple command that is immune to quoting problems with
+::  spaces in the folder path. WinPE runs it directly as SYSTEM.
 :: ===================================================================
 setlocal
 cd /d "%~dp0"
@@ -13,11 +14,13 @@ if not exist "%~dp0RescueDrive.ps1" (
   exit /b 1
 )
 
-reg query "HKLM\SYSTEM\CurrentControlSet\Control\MiniNT" >nul 2>&1
-if %errorlevel%==0 (
-  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RescueDrive.ps1"
-) else (
-  powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "try { Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"%~dp0RescueDrive.ps1\"' } catch { Write-Host $_.Exception.Message; pause }"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0RescueDrive.ps1"
+
+if errorlevel 1 (
+  echo.
+  echo The app could not start. If an error window appeared, see the
+  echo details it showed; a copy is saved to %%TEMP%%\RescueDrive-error.log
+  echo.
+  pause
 )
 endlocal
