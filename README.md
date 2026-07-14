@@ -126,14 +126,18 @@ easiest:
    exclusion, or just use `Install-RescueDrive.bat` (option 1).
 5. **"Smart App Control blocked an app that might be unsafe" (Windows 11).**
    Smart App Control is stricter than SmartScreen and has **no "Run anyway"
-   option** — it will always block the unsigned exe. Use the script route
-   instead: re-download the zip, right-click it → Properties → **Unblock** →
-   OK **before** extracting (this clears the internet mark Smart App Control
-   keys on), then run `Start-RescueDrive.bat`. If you want the exe itself to
-   work under Smart App Control, it must be code-signed (see the signing
-   section below); turning Smart App Control off is possible in Windows
-   Security → App & browser control, but that switch is one-way — it can't be
-   re-enabled without reinstalling Windows.
+   option**. It always blocks the unsigned exe, and it also forces PowerShell
+   into *Constrained Language Mode* for unsigned scripts — which prevents the
+   GUI from opening at all (the scripts now detect this and print an
+   explanation instead of failing silently). Unblocking the files does **not**
+   lift this restriction. On a machine with Smart App Control enabled you have
+   exactly two options:
+   - **Turn Smart App Control off**: Windows Security → App & browser control →
+     Smart App Control settings → Off. ⚠️ One-way switch — it cannot be
+     re-enabled without reinstalling Windows. Defender and SmartScreen remain
+     active afterward.
+   - **Code-sign the exe and scripts** with a certificate from a trusted CA
+     (see the signing section below).
 
 All of these open the same installer GUI — there's no functional difference,
 only how Windows treats the file.

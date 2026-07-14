@@ -8,6 +8,29 @@
 
     Launch elevated via Start-RescueDrive.bat (or RescueDrive.exe).
 #>
+# Smart App Control / WDAC / AppLocker force PowerShell into Constrained
+# Language Mode for unsigned scripts. In that mode no .NET objects (and so no
+# window, not even an error dialog) can be created — every failure looks
+# silent. Detect it FIRST and explain, instead of dying invisibly.
+$lm = $ExecutionContext.SessionState.LanguageMode
+if ($lm -ne 'FullLanguage') {
+    Write-Host ''
+    Write-Host "BLOCKED: PowerShell is running in '$lm' mode, so this app cannot open a window." -ForegroundColor Red
+    Write-Host ''
+    Write-Host 'Cause: Windows 11 Smart App Control (or a WDAC/AppLocker policy) restricts'
+    Write-Host 'unsigned scripts. Unblocking the files does NOT lift this restriction.'
+    Write-Host ''
+    Write-Host 'Your options:'
+    Write-Host '  1. Turn Smart App Control off:  Windows Security > App & browser control >'
+    Write-Host '     Smart App Control settings > Off.  NOTE: this switch is one-way; it'
+    Write-Host '     cannot be re-enabled without reinstalling Windows.'
+    Write-Host '  2. Or have the scripts/exe signed with a trusted code-signing certificate'
+    Write-Host '     (see the README signing section).'
+    Write-Host ''
+    Read-Host 'Press Enter to close this window'
+    exit 1
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 

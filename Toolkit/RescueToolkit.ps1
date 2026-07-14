@@ -6,6 +6,19 @@
       - Offline: inside WinPE booted from the rescue drive (operates on the
                  Windows installation found on the internal disk)
 #>
+# Smart App Control / WDAC / AppLocker force PowerShell into Constrained
+# Language Mode for unsigned scripts, which blocks all window creation —
+# every failure looks silent. Detect it FIRST and explain.
+$lm = $ExecutionContext.SessionState.LanguageMode
+if ($lm -ne 'FullLanguage') {
+    Write-Host ''
+    Write-Host "BLOCKED: PowerShell is running in '$lm' mode, so this app cannot open a window." -ForegroundColor Red
+    Write-Host 'Cause: Windows 11 Smart App Control (or a WDAC/AppLocker policy) restricts'
+    Write-Host 'unsigned scripts. See the README troubleshooting section for the options.'
+    Read-Host 'Press Enter to close this window'
+    exit 1
+}
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = 'Continue'
