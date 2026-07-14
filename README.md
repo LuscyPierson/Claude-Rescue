@@ -124,9 +124,19 @@ easiest:
 4. **Antivirus quarantined it.** If the file vanishes after download, your AV
    removed it as a false positive. Restore it from quarantine and add an
    exclusion, or just use `Install-RescueDrive.bat` (option 1).
+5. **"Smart App Control blocked an app that might be unsafe" (Windows 11).**
+   Smart App Control is stricter than SmartScreen and has **no "Run anyway"
+   option** — it will always block the unsigned exe. Use the script route
+   instead: re-download the zip, right-click it → Properties → **Unblock** →
+   OK **before** extracting (this clears the internet mark Smart App Control
+   keys on), then run `Start-RescueDrive.bat`. If you want the exe itself to
+   work under Smart App Control, it must be code-signed (see the signing
+   section below); turning Smart App Control off is possible in Windows
+   Security → App & browser control, but that switch is one-way — it can't be
+   re-enabled without reinstalling Windows.
 
-All four open the same installer GUI — there's no functional difference, only
-how Windows treats the file.
+All of these open the same installer GUI — there's no functional difference,
+only how Windows treats the file.
 
 ## Permanently fixing the warning: sign the exe
 
