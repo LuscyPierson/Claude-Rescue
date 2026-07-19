@@ -26,11 +26,15 @@
     certificate expires. Override the timestamp server with RESCUE_SIGN_TSA.
 #>
 param(
-    [string] $ExePath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'dist\RescueDrive.exe')
+    # Files to sign. Defaults to the built exe; Build-Exe.ps1 also calls this
+    # with every .ps1 in the repo, because Smart App Control / WDAC require
+    # the SCRIPTS to be Authenticode-signed too, not just the exe.
+    [string[]] $Paths = @((Join-Path (Split-Path $PSScriptRoot -Parent) 'dist\RescueDrive.exe'))
 )
 $ErrorActionPreference = 'Stop'
 
-if (-not (Test-Path $ExePath)) { throw "Nothing to sign: $ExePath not found (run Build-Exe.ps1 first)." }
+$missing = $Paths | Where-Object { -not (Test-Path $_) }
+if ($missing) { throw "Nothing to sign at: $($missing -join ', ')" }
 
 $tsa = if ($env:RESCUE_SIGN_TSA) { $env:RESCUE_SIGN_TSA } else { 'http://timestamp.digicert.com' }
 
@@ -61,16 +65,18 @@ function Get-SigningCert {
 $cert = Get-SigningCert
 if (-not $cert) {
     Write-Host 'No signing certificate configured (RESCUE_SIGN_* env vars unset).'
-    Write-Host 'Leaving the exe UNSIGNED — it still runs, but SmartScreen/AV may block it.'
+    Write-Host 'Leaving files UNSIGNED — they still run, but SmartScreen/Smart App Control may block them.'
     Write-Host 'See installer-exe\Sign-Exe.ps1 for how to supply a certificate.'
     exit 0
 }
 
-Write-Host "Signing $ExePath with certificate: $($cert.Subject)"
-$result = Set-AuthenticodeSignature -FilePath $ExePath -Certificate $cert `
-    -HashAlgorithm SHA256 -TimestampServer $tsa -ErrorAction Stop
-
-if ($result.Status -ne 'Valid') {
-    throw "Signing failed: $($result.Status) — $($result.StatusMessage)"
+Write-Host "Signing $($Paths.Count) file(s) with certificate: $($cert.Subject)"
+foreach ($f in $Paths) {
+    $result = Set-AuthenticodeSignature -FilePath $f -Certificate $cert `
+        -HashAlgorithm SHA256 -TimestampServer $tsa -ErrorAction Stop
+    if ($result.Status -ne 'Valid') {
+        throw "Signing failed for ${f}: $($result.Status) — $($result.StatusMessage)"
+    }
+    Write-Host "  Signed OK: $f"
 }
-Write-Host "Signed OK. Status: $($result.Status); timestamped via $tsa."
+Write-Host "All signed; timestamped via $tsa."

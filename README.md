@@ -142,32 +142,45 @@ easiest:
 All of these open the same installer GUI — there's no functional difference,
 only how Windows treats the file.
 
-## Permanently fixing the warning: sign the exe
+## Permanently fixing the blocks: code-sign everything
 
-The blocks above happen because `RescueDrive.exe` is unsigned. A code signature
-removes them for everyone, not just on your own PC. The build is already wired
-for it — you only need to supply a certificate:
+The blocks above happen because the exe **and the PowerShell scripts** are
+unsigned. A code signature removes them for everyone — and it's the only way
+to run under Smart App Control without turning it off. The build is fully
+wired: `Build-Exe.ps1` signs every `.ps1` in place, embeds the signed scripts
+in the payload, then signs the exe.
 
-1. Get an **Authenticode code-signing certificate** as a `.pfx` file. Options:
-   buy one from a CA (DigiCert, Sectigo, SSL.com, etc.; OV is cheapest, EV gives
-   instant SmartScreen reputation), or, for your own machines only, create a
-   self-signed one and trust it locally.
-2. **For CI builds (recommended):** base64-encode the pfx and add two GitHub
-   repository secrets — `RESCUE_SIGN_PFX_BASE64` and `RESCUE_SIGN_PFX_PASSWORD`.
-   ```powershell
-   [Convert]::ToBase64String([IO.File]::ReadAllBytes('mycert.pfx')) | Set-Content cert.txt
-   ```
-   Paste the contents of `cert.txt` into the `RESCUE_SIGN_PFX_BASE64` secret. The
-   next push signs `dist\RescueDrive.exe` automatically.
-3. **For a local build:** set env vars and run the build:
-   ```powershell
-   $env:RESCUE_SIGN_PFX_PATH = 'C:\path\to\mycert.pfx'
-   $env:RESCUE_SIGN_PFX_PASSWORD = '<password>'
-   .\installer-exe\Build-Exe.ps1
-   ```
+**1. Buy an Authenticode code-signing certificate** (OV, issued to your
+verified identity) from a CA such as SSL.com, Sectigo, or DigiCert (roughly
+$100–400/year). Note: since 2023, CAs must deliver these on a **hardware USB
+token** or via **cloud signing** — plain downloadable `.pfx` files are largely
+gone. Individuals can be validated with ID documents; it typically takes a few
+days.
 
-Without a certificate the build still succeeds and produces a working unsigned
-exe — signing is skipped, not required. Certificate files are git-ignored so
+**2. Sign, depending on what you received:**
+
+- **USB token** (most common): plug it in on your Windows PC — the certificate
+  appears in your personal cert store. Then build locally:
+  ```powershell
+  $env:RESCUE_SIGN_THUMBPRINT = '<cert thumbprint from certmgr.msc>'
+  .\installer-exe\Build-Exe.ps1     # prompts for the token PIN as it signs
+  ```
+  Commit and push the signed files; they stay signed for everyone who
+  downloads them (signatures are timestamped, so they outlive the cert).
+- **A `.pfx` file** (some cloud/legacy flows): either build locally with
+  `RESCUE_SIGN_PFX_PATH` + `RESCUE_SIGN_PFX_PASSWORD`, or add GitHub secrets
+  `RESCUE_SIGN_PFX_BASE64` + `RESCUE_SIGN_PFX_PASSWORD`
+  (`[Convert]::ToBase64String([IO.File]::ReadAllBytes('mycert.pfx'))`) and CI
+  signs on every push, committing the signed exe and scripts back.
+
+**Smart App Control caveat, honestly:** SAC weighs both signature and
+*reputation*. A valid CA signature satisfies it in the normal case, but a
+brand-new certificate with zero install base can still be blocked for a while
+until Microsoft's cloud has seen it. If immediate certainty matters more than
+keeping SAC on, turning SAC off is the deterministic option.
+
+Without a certificate the build still succeeds and produces working unsigned
+files — signing is skipped, not required. Certificate files are git-ignored so
 they can't be committed by accident. Details in `installer-exe\Sign-Exe.ps1`.
 
 ## Notes & limitations
